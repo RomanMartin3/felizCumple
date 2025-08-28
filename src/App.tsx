@@ -1,6 +1,64 @@
+// src/App.tsx
+
 import { motion } from "framer-motion";
 import { useState } from "react";
 import Confetti from "react-confetti";
+import styled from "@emotion/styled";
+
+// --- Componentes con Estilos (usando Emotion) ---
+
+// Contenedor principal de la aplicación
+const AppContainer = styled.div`
+  min-height: 100vh;
+  /* Degradado de rosa pálido a blanco, como en tu código original */
+  background: linear-gradient(to bottom, #fecdd3, #ffe4e6, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  font-family: sans-serif;
+`;
+
+// Título principal
+const Title = styled(motion.h1)`
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: bold;
+  color: #db2777; /* text-pink-600 */
+
+  @media (min-width: 768px) {
+    font-size: 3rem; /* md:text-5xl */
+  }
+`;
+
+// Párrafo de sorpresa
+const SurpriseText = styled(motion.p)`
+  margin-top: 1.5rem; /* mt-6 */
+  font-size: 1.125rem; /* text-lg */
+  color: #1f2937; /* text-gray-800 */
+
+  @media (min-width: 768px) {
+    font-size: 1.5rem; /* md:text-2xl */
+  }
+`;
+
+// Contenedor de la imagen del regalo
+const GiftBox = styled(motion.div)`
+  margin-top: 2.5rem; /* mt-10 */
+  cursor: pointer;
+
+  img {
+    width: 10rem; /* w-40 */
+    height: 10rem; /* h-40 */
+    margin: 0 auto;
+
+    @media (min-width: 768px) {
+      width: 14rem; /* md:w-56 */
+      height: 14rem; /* md:h-56 */
+    }
+  }
+`;
 
 export default function App() {
   const [opened, setOpened] = useState(false);
@@ -10,63 +68,48 @@ export default function App() {
 
     // Descargar PDF del regalo
     const link = document.createElement("a");
-    link.href = "/regalo.pdf"; // tu archivo en /public
+    link.href = "/regalo.pdf";
     link.download = "MiRegalo.pdf";
     link.click();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-white flex flex-col items-center justify-center text-center p-4 font-sans">
+    <AppContainer>
       {opened && <Confetti />}
 
-      {/* Texto de bienvenida */}
-      <motion.h1
+      <Title
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
-        className="text-3xl md:text-5xl font-bold text-pink-600"
       >
         🎂 ¡Feliz Cumpleaños Amor! 🎂
-      </motion.h1>
+      </Title>
 
-      {/* Caja de regalo */}
-      <motion.div
-        className="mt-10 cursor-pointer"
+      <GiftBox
         onClick={handleOpenGift}
         initial={{ scale: 0.9 }}
         whileHover={{ scale: 1.05 }}
       >
         {!opened ? (
-          <img
-            src="/gift-closed.png"
-            alt="Caja de regalo"
-            className="w-40 h-40 md:w-56 md:h-56 mx-auto"
-          />
+          <img src="/gift-closed.png" alt="Caja de regalo" />
         ) : (
-          <img
-            src="/gift-open.png"
-            alt="Regalo abierto"
-            className="w-40 h-40 md:w-56 md:h-56 mx-auto"
-          />
+          <img src="/gift-open.png" alt="Regalo abierto" />
         )}
-      </motion.div>
+      </GiftBox>
 
-      {/* Mensaje después de abrir */}
       {opened && (
-        <motion.p
+        <SurpriseText
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-6 text-lg md:text-2xl text-gray-800"
         >
           🎁 ¡Sorpresa! Descargaste tu regalo 💖
-        </motion.p>
+        </SurpriseText>
       )}
 
-      {/* Música de fondo */}
       <audio autoPlay loop>
         <source src="/cancion.mp3" type="audio/mpeg" />
       </audio>
-    </div>
+    </AppContainer>
   );
 }
