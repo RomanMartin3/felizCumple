@@ -4,7 +4,13 @@ import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import Confetti from "react-confetti";
 import styled from "@emotion/styled";
-import { FaPlay, FaPause, FaForward, FaBackward } from "react-icons/fa";
+import {
+  FaPlay,
+  FaPause,
+  FaForward,
+  FaBackward,
+  FaRocket,
+} from "react-icons/fa";
 import PhotoGallery from "./PhotoGallery";
 
 // --- Lista de Canciones ---
@@ -14,8 +20,28 @@ const songs = [
   { title: "Canción 3", src: "/cancion3.mp3" },
 ];
 
-// --- Componentes con Estilos ---
+// --- Tipos para el Cuestionario ---
+type ImageOption = { id: string; src: string };
+type TextOption = { id: string; text: string };
 
+type QuizLevel =
+  | { id: number; question: string; type: "date"; correctAnswer: string }
+  | {
+      id: number;
+      question: string;
+      type: "image";
+      options: ImageOption[];
+      correctAnswer: string;
+    }
+  | {
+      id: number;
+      question: string;
+      type: "text";
+      options: TextOption[];
+      correctAnswer: string;
+    };
+
+// --- Componentes con Estilos (sin cambios) ---
 const AppContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(to bottom, #fecdd3, #ffe4e6, #ffffff);
@@ -27,7 +53,6 @@ const AppContainer = styled.div`
   padding: 1rem;
   position: relative;
 `;
-
 const TopContent = styled.div`
   display: flex;
   flex-direction: column;
@@ -35,7 +60,6 @@ const TopContent = styled.div`
   gap: 1.5rem;
   margin-bottom: 2rem;
 `;
-
 const Title = styled(motion.h1)`
   font-size: 1.875rem;
   font-weight: bold;
@@ -46,12 +70,10 @@ const Title = styled(motion.h1)`
     font-size: 3rem;
   }
 `;
-
 const Letter = styled(motion.span)`
   display: inline-block;
   white-space: pre;
 `;
-
 const SurpriseText = styled(motion.p)`
   margin-top: 1.5rem;
   font-size: 1.125rem;
@@ -60,7 +82,6 @@ const SurpriseText = styled(motion.p)`
     font-size: 1.5rem;
   }
 `;
-
 const GiftBox = styled(motion.div)`
   margin-top: 2.5rem;
   cursor: pointer;
@@ -74,7 +95,6 @@ const GiftBox = styled(motion.div)`
     }
   }
 `;
-
 const MusicPlayerContainer = styled.div`
   background: rgba(255, 255, 255, 0.7);
   padding: 0.75rem 1rem;
@@ -84,7 +104,6 @@ const MusicPlayerContainer = styled.div`
   align-items: center;
   gap: 1rem;
 `;
-
 const PlayerButton = styled.button`
   background: none;
   border: none;
@@ -96,19 +115,26 @@ const PlayerButton = styled.button`
     transform: scale(1.2);
   }
 `;
-
-const SecretSectionButton = styled(motion.button)`
+const RocketButton = styled(motion.button)`
   margin-top: 2rem;
-  padding: 0.75rem 1.5rem;
-  background-color: #db2777;
-  color: white;
+  background: none;
   border: none;
-  border-radius: 9999px;
-  font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 4rem;
+  color: #db2777;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .rocket-icon {
+    animation: rocket-animation 1.5s infinite ease-in-out;
+  }
+  p {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #db2777;
+    margin-top: 0.5rem;
+  }
 `;
-
 const ModalBackdrop = styled.div`
   position: fixed;
   top: 0;
@@ -121,7 +147,6 @@ const ModalBackdrop = styled.div`
   align-items: center;
   z-index: 100;
 `;
-
 const ModalContent = styled(motion.div)`
   background: white;
   padding: 2rem;
@@ -131,24 +156,20 @@ const ModalContent = styled(motion.div)`
   max-width: 400px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 `;
-
 const ModalQuestion = styled.h2`
   color: #db2777;
   margin-bottom: 1.5rem;
 `;
-
-// --- INPUT MODIFICADO ---
 const ModalInput = styled.input`
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 0.5rem;
   margin-top: 1rem;
-  font-family: inherit; /* Asegura que use la misma fuente */
-  color: #333; /* Color de texto para el input */
+  font-family: inherit;
+  color: #333;
   font-size: 1rem;
 `;
-
 const ModalButton = styled.button`
   margin-top: 1.5rem;
   padding: 0.75rem 1.5rem;
@@ -158,11 +179,76 @@ const ModalButton = styled.button`
   border-radius: 0.5rem;
   cursor: pointer;
 `;
-
 const ErrorMessage = styled.p`
   color: red;
   margin-top: 1rem;
 `;
+const ImageOptionsContainer = styled.div`
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1.5rem;
+`;
+const StyledImageOption = styled.img<{ isSelected: boolean }>`
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: 3px solid ${(props) => (props.isSelected ? "#db2777" : "transparent")};
+  transition: transform 0.2s;
+  &:hover {
+    transform: scale(1.1);
+  }
+`;
+const TextOptionsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+`;
+const StyledTextOption = styled.button<{ isSelected: boolean }>`
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  background-color: ${(props) => (props.isSelected ? "#fecdd3" : "white")};
+  color: #333;
+  font-size: 1rem;
+`;
+
+// ===================================================================
+// --- SECCIÓN PARA PERSONALIZAR EL CUESTIONARIO ---
+// ===================================================================
+const quizLevels: QuizLevel[] = [
+  {
+    id: 1,
+    question: "¿Recuerdas la fecha de nuestro primer beso?",
+    type: "date",
+    correctAnswer: "2016-10-27",
+  },
+  {
+    id: 2,
+    question: "¿Donde fue nuestra primera cita?",
+    type: "image",
+    options: [
+      { id: "A", src: "/correcta.png" },
+      { id: "B", src: "/incorrecta1.jpg" },
+      { id: "C", src: "/incorrecta2.jpg" },
+    ],
+    correctAnswer: "A",
+  },
+  {
+    id: 3,
+    question: "¿Que hiciste despues de decirme TE AMO por primera vez?",
+    type: "text",
+    options: [
+      { id: "A", text: "Contarle a tus amigas" },
+      { id: "B", text: "Pedirme perdon y ponerte a llorar" },
+      { id: "C", text: "Ponerte feliz" },
+    ],
+    correctAnswer: "B",
+  },
+];
 
 export default function App() {
   const [opened, setOpened] = useState(false);
@@ -171,17 +257,16 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const [showSecretModal, setShowSecretModal] = useState(false);
-  const [secretAnswer, setSecretAnswer] = useState("");
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  const correctAnswer = "2016-10-27";
+  const [currentLevel, setCurrentLevel] = useState(0);
+  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.src = songs[currentSongIndex].src;
       if (isPlaying) {
-        audioRef.current.play();
+        audioRef.current.play().catch(console.error);
       }
     }
   }, [currentSongIndex, isPlaying]);
@@ -191,21 +276,15 @@ export default function App() {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+        audioRef.current.play().catch(console.error);
       }
       setIsPlaying(!isPlaying);
     }
   };
-
-  const handleNextSong = () => {
-    setCurrentSongIndex((prevIndex) => (prevIndex + 1) % songs.length);
-  };
-
-  const handlePrevSong = () => {
-    setCurrentSongIndex(
-      (prevIndex) => (prevIndex - 1 + songs.length) % songs.length
-    );
-  };
+  const handleNextSong = () =>
+    setCurrentSongIndex((prev) => (prev + 1) % songs.length);
+  const handlePrevSong = () =>
+    setCurrentSongIndex((prev) => (prev - 1 + songs.length) % songs.length);
 
   const handleOpenGift = () => {
     setOpened(true);
@@ -218,20 +297,33 @@ export default function App() {
     }
   };
 
-  const handleUnlock = () => {
-    if (secretAnswer === correctAnswer) {
-      setIsUnlocked(true);
-      setShowSecretModal(false);
-      setErrorMessage("");
+  const handleAnswerChange = (levelId: number, answer: string) => {
+    setAnswers((prev) => ({ ...prev, [levelId]: answer }));
+  };
+
+  const handleCheckAnswer = () => {
+    const level = quizLevels[currentLevel];
+    if (answers[level.id] === level.correctAnswer) {
+      if (currentLevel < quizLevels.length - 1) {
+        setCurrentLevel(currentLevel + 1);
+        setErrorMessage("");
+      } else {
+        setIsUnlocked(true);
+        setShowSecretModal(false);
+      }
     } else {
-      setErrorMessage(
-        "Heee bro como no vas a saber cuando fue nuestro primer beso! "
-      );
+      setErrorMessage("¡Respuesta incorrecta! Inténtalo de nuevo.");
     }
   };
 
-  const text = "🎂 ¡Feliz Cumpleaños Pompa! 🎂";
+  const startQuiz = () => {
+    setCurrentLevel(0);
+    setAnswers({});
+    setErrorMessage("");
+    setShowSecretModal(true);
+  };
 
+  const text = "🎂 ¡Feliz Cumpleaños Pompa! 🎂";
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: (i = 1) => ({
@@ -239,7 +331,6 @@ export default function App() {
       transition: { staggerChildren: 0.1, delayChildren: 0.04 * i },
     }),
   };
-
   const letterVariants = {
     visible: {
       opacity: 1,
@@ -253,10 +344,53 @@ export default function App() {
     },
   };
 
+  const renderCurrentLevel = () => {
+    const level = quizLevels[currentLevel];
+    switch (level.type) {
+      case "date":
+        return (
+          <ModalInput
+            type="date"
+            value={answers[level.id] || ""}
+            onChange={(e) => handleAnswerChange(level.id, e.target.value)}
+          />
+        );
+      case "image":
+        return (
+          <ImageOptionsContainer>
+            {level.options.map((option) => (
+              <StyledImageOption
+                key={option.id}
+                src={option.src}
+                alt={`Opción ${option.id}`}
+                isSelected={answers[level.id] === option.id}
+                onClick={() => handleAnswerChange(level.id, option.id)}
+              />
+            ))}
+          </ImageOptionsContainer>
+        );
+      case "text":
+        return (
+          <TextOptionsContainer>
+            {level.options.map((option) => (
+              <StyledTextOption
+                key={option.id}
+                isSelected={answers[level.id] === option.id}
+                onClick={() => handleAnswerChange(level.id, option.id)}
+              >
+                {option.text}
+              </StyledTextOption>
+            ))}
+          </TextOptionsContainer>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <AppContainer>
       {opened && <Confetti />}
-
       <TopContent>
         <MusicPlayerContainer>
           <PlayerButton onClick={handlePrevSong}>
@@ -269,78 +403,68 @@ export default function App() {
             <FaForward />
           </PlayerButton>
         </MusicPlayerContainer>
-
         <Title variants={containerVariants} initial="hidden" animate="visible">
-          {Array.from(text).map((letter, index) => (
+          {Array.from(text).map((char, index) => (
             <Letter
               key={index}
               variants={letterVariants}
               whileHover={{ y: -10 }}
             >
-              {letter}
+              {char}
             </Letter>
           ))}
         </Title>
       </TopContent>
-
       <GiftBox
         onClick={handleOpenGift}
         initial={{ scale: 0.9 }}
         whileHover={{ scale: 1.05 }}
       >
-        {!opened ? (
-          <img src="/gift-closed.png" alt="Caja de regalo" />
-        ) : (
-          <img src="/gift-open.png" alt="Regalo abierto" />
-        )}
+        <img
+          src={opened ? "/gift-open.png" : "/gift-closed.png"}
+          alt="Caja de regalo"
+        />
       </GiftBox>
-
       {opened && (
         <SurpriseText
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          🎁 Una sesion de masajes para que relajes ese cuello! 💖
+          🎁 ¡Una sesión de masajes para que relajes ese cuello! 💖
         </SurpriseText>
       )}
-
-      {!isUnlocked && (
-        <SecretSectionButton
-          onClick={() => setShowSecretModal(true)}
+      {opened && !isUnlocked && (
+        <RocketButton
+          onClick={startQuiz}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 }}
         >
-          Tengo una sorpresa más para ti...
-        </SecretSectionButton>
+          <div className="rocket-icon">
+            <FaRocket />
+          </div>
+          <p>Tengo una sorpresa más para ti...</p>
+        </RocketButton>
       )}
-
       {showSecretModal && (
         <ModalBackdrop onClick={() => setShowSecretModal(false)}>
           <ModalContent
-            onClick={(e) => e.stopPropagation()} // Evita que el modal se cierre al hacer clic dentro
+            onClick={(e) => e.stopPropagation()}
             initial={{ scale: 0.7, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
           >
-            <ModalQuestion>
-              ¿Recuerdas la fecha de nuestro primer beso?
-            </ModalQuestion>
-
-            {/* --- CAMBIO PRINCIPAL AQUÍ --- */}
-            <ModalInput
-              type="date" // Cambiado de "text" a "date"
-              value={secretAnswer}
-              onChange={(e) => setSecretAnswer(e.target.value)}
-            />
-            {/* --------------------------- */}
-
-            <ModalButton onClick={handleUnlock}>Desbloquear</ModalButton>
+            <ModalQuestion>{quizLevels[currentLevel].question}</ModalQuestion>
+            {renderCurrentLevel()}
+            <ModalButton onClick={handleCheckAnswer}>
+              {currentLevel === quizLevels.length - 1
+                ? "Desbloquear"
+                : "Siguiente"}
+            </ModalButton>
             {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
           </ModalContent>
         </ModalBackdrop>
       )}
-
       {isUnlocked && (
         <>
           <SurpriseText
@@ -348,15 +472,12 @@ export default function App() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            ¡Lo sabías! Siempre tan atenta a cada detalle de nuestra historia.
-            Este espacio está lleno de los momentos que han construido nuestro
-            amor, cada foto un suspiro, cada instante un tesoro.
+            ¡Lo sabías! Este espacio está lleno de los momentos que han
+            construido nuestro amor.
           </SurpriseText>
-
           <PhotoGallery />
         </>
       )}
-
       <audio
         ref={audioRef}
         loop
