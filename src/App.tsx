@@ -27,13 +27,12 @@ const AppContainer = styled.div`
   position: relative;
 `;
 
-// AÑADIDO: Un contenedor para ordenar los elementos superiores
 const TopContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem; /* Espacio entre el reproductor y el título */
-  margin-bottom: 2rem; /* Espacio antes del regalo */
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 `;
 
 const Title = styled(motion.h1)`
@@ -75,7 +74,6 @@ const GiftBox = styled(motion.div)`
   }
 `;
 
-// MODIFICADO: Estilos para el reproductor de música
 const MusicPlayerContainer = styled.div`
   background: rgba(255, 255, 255, 0.7);
   padding: 0.75rem 1rem;
@@ -84,12 +82,6 @@ const MusicPlayerContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
-`;
-
-const SongTitle = styled.p`
-  color: #c1126d;
-  font-weight: bold;
-  min-width: 150px;
 `;
 
 const PlayerButton = styled.button`
@@ -104,12 +96,88 @@ const PlayerButton = styled.button`
   }
 `;
 
+const SecretSectionButton = styled(motion.button)`
+  margin-top: 2rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #db2777;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const ModalBackdrop = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+`;
+
+const ModalContent = styled(motion.div)`
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+`;
+
+const ModalQuestion = styled.h2`
+  color: #db2777;
+  margin-bottom: 1.5rem;
+`;
+
+// --- INPUT MODIFICADO ---
+const ModalInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  font-family: inherit; /* Asegura que use la misma fuente */
+  color: #333; /* Color de texto para el input */
+  font-size: 1rem;
+`;
+
+const ModalButton = styled.button`
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #db2777;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+`;
+
+const ErrorMessage = styled.p`
+  color: red;
+  margin-top: 1rem;
+`;
+
 export default function App() {
   const [opened, setOpened] = useState(false);
-
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const [showSecretModal, setShowSecretModal] = useState(false);
+  const [secretAnswer, setSecretAnswer] = useState("");
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // --- IMPORTANTE: CAMBIO DE FORMATO ---
+  // Ahora la fecha debe estar en formato AAAA-MM-DD
+  const correctAnswer = "2016-10-27"; // <-- CAMBIA ESTA FECHA
+  // ------------------------------------
 
   useEffect(() => {
     if (audioRef.current) {
@@ -152,6 +220,18 @@ export default function App() {
     }
   };
 
+  const handleUnlock = () => {
+    if (secretAnswer === correctAnswer) {
+      setIsUnlocked(true);
+      setShowSecretModal(false);
+      setErrorMessage("");
+    } else {
+      setErrorMessage(
+        "Heee bro como no vas a saber cuando fue nuestro primer beso! "
+      );
+    }
+  };
+
   const text = "🎂 ¡Feliz Cumpleaños Amor! 🎂";
 
   const containerVariants = {
@@ -179,9 +259,7 @@ export default function App() {
     <AppContainer>
       {opened && <Confetti />}
 
-      {/* MODIFICADO: Contenedor para agrupar y posicionar los elementos superiores */}
       <TopContent>
-        {/* MODIFICADO: El reproductor ahora va aquí arriba */}
         <MusicPlayerContainer>
           <PlayerButton onClick={handlePrevSong}>
             <FaBackward />
@@ -229,7 +307,54 @@ export default function App() {
         </SurpriseText>
       )}
 
-      {/* La etiqueta de audio puede quedar aquí, ya que es invisible */}
+      {!isUnlocked && (
+        <SecretSectionButton
+          onClick={() => setShowSecretModal(true)}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+        >
+          Tengo una sorpresa más para ti...
+        </SecretSectionButton>
+      )}
+
+      {showSecretModal && (
+        <ModalBackdrop onClick={() => setShowSecretModal(false)}>
+          <ModalContent
+            onClick={(e) => e.stopPropagation()} // Evita que el modal se cierre al hacer clic dentro
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
+            <ModalQuestion>
+              ¿Recuerdas la fecha de nuestro primer beso?
+            </ModalQuestion>
+
+            {/* --- CAMBIO PRINCIPAL AQUÍ --- */}
+            <ModalInput
+              type="date" // Cambiado de "text" a "date"
+              value={secretAnswer}
+              onChange={(e) => setSecretAnswer(e.target.value)}
+            />
+            {/* --------------------------- */}
+
+            <ModalButton onClick={handleUnlock}>Desbloquear</ModalButton>
+            {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+          </ModalContent>
+        </ModalBackdrop>
+      )}
+
+      {isUnlocked && (
+        <SurpriseText
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          ¡Lo sabías! Siempre tan atenta a cada detalle de nuestra historia.
+          Este espacio está lleno de los momentos que han construido nuestro
+          amor, cada foto un suspiro, cada instante un tesoro.
+        </SurpriseText>
+      )}
+
       <audio
         ref={audioRef}
         loop
