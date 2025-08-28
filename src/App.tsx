@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import Confetti from "react-confetti";
 import styled from "@emotion/styled";
 import { FaPlay, FaPause, FaForward, FaBackward } from "react-icons/fa";
+import PhotoGallery from "./PhotoGallery";
 
 // --- Lista de Canciones ---
 const songs = [
@@ -174,10 +175,7 @@ export default function App() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // --- IMPORTANTE: CAMBIO DE FORMATO ---
-  // Ahora la fecha debe estar en formato AAAA-MM-DD
-  const correctAnswer = "2016-10-27"; // <-- CAMBIA ESTA FECHA
-  // ------------------------------------
+  const correctAnswer = "2016-10-27";
 
   useEffect(() => {
     if (audioRef.current) {
@@ -344,15 +342,19 @@ export default function App() {
       )}
 
       {isUnlocked && (
-        <SurpriseText
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          ¡Lo sabías! Siempre tan atenta a cada detalle de nuestra historia.
-          Este espacio está lleno de los momentos que han construido nuestro
-          amor, cada foto un suspiro, cada instante un tesoro.
-        </SurpriseText>
+        <>
+          <SurpriseText
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            ¡Lo sabías! Siempre tan atenta a cada detalle de nuestra historia.
+            Este espacio está lleno de los momentos que han construido nuestro
+            amor, cada foto un suspiro, cada instante un tesoro.
+          </SurpriseText>
+
+          <PhotoGallery />
+        </>
       )}
 
       <audio
