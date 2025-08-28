@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // Importa AnimatePresence
 import { useState, useRef, useEffect } from "react";
 import Confetti from "react-confetti";
 import styled from "@emotion/styled";
@@ -12,6 +12,7 @@ import {
   FaRocket,
 } from "react-icons/fa";
 import PhotoGallery from "./PhotoGallery";
+import SpaceAnimation from "./SpaceAnimation"; // Importa el componente de animación
 
 // --- Lista de Canciones ---
 const songs = [
@@ -41,7 +42,7 @@ type QuizLevel =
       correctAnswer: string;
     };
 
-// --- Componentes con Estilos (sin cambios) ---
+// --- Componentes con Estilos ---
 const AppContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(to bottom, #fecdd3, #ffe4e6, #ffffff);
@@ -217,7 +218,7 @@ const StyledTextOption = styled.button<{ isSelected: boolean }>`
 `;
 
 // ===================================================================
-// --- SECCIÓN PARA PERSONALIZAR EL CUESTIONARIO ---
+// --- TUS PREGUNTAS PERSONALIZADAS ---
 // ===================================================================
 const quizLevels: QuizLevel[] = [
   {
@@ -258,6 +259,7 @@ export default function App() {
 
   const [showSecretModal, setShowSecretModal] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [showSpaceAnimation, setShowSpaceAnimation] = useState(false); // NUEVO ESTADO
   const [errorMessage, setErrorMessage] = useState("");
   const [currentLevel, setCurrentLevel] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -308,12 +310,18 @@ export default function App() {
         setCurrentLevel(currentLevel + 1);
         setErrorMessage("");
       } else {
-        setIsUnlocked(true);
+        // --- LÓGICA DE ANIMACIÓN ---
         setShowSecretModal(false);
+        setShowSpaceAnimation(true);
       }
     } else {
       setErrorMessage("¡Respuesta incorrecta! Inténtalo de nuevo.");
     }
+  };
+
+  const handleSpaceAnimationComplete = () => {
+    setShowSpaceAnimation(false);
+    setIsUnlocked(true);
   };
 
   const startQuiz = () => {
@@ -391,6 +399,13 @@ export default function App() {
   return (
     <AppContainer>
       {opened && <Confetti />}
+
+      <AnimatePresence>
+        {showSpaceAnimation && (
+          <SpaceAnimation onAnimationComplete={handleSpaceAnimationComplete} />
+        )}
+      </AnimatePresence>
+
       <TopContent>
         <MusicPlayerContainer>
           <PlayerButton onClick={handlePrevSong}>
@@ -434,7 +449,7 @@ export default function App() {
           🎁 ¡Una sesión de masajes para que relajes ese cuello! 💖
         </SurpriseText>
       )}
-      {opened && !isUnlocked && (
+      {opened && !isUnlocked && !showSpaceAnimation && (
         <RocketButton
           onClick={startQuiz}
           initial={{ opacity: 0, y: 20 }}
@@ -472,8 +487,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            ¡Lo sabías! Este espacio está lleno de los momentos que han
-            construido nuestro amor.
+            Cada estrella es un momento y cada momento con vos es infinito como las estrellas
           </SurpriseText>
           <PhotoGallery />
         </>

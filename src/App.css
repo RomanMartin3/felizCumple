@@ -40,3 +40,17 @@
 .read-the-docs {
   color: #888;
 }
+
+@keyframes rocket-animation {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-45deg); /* Cohete ligeramente inclinado */
+  }
+  50% {
+    transform: translateY(-20px) rotate(-45deg); /* Se eleva un poco */
+  }
+}
+
+.rocket-icon {
+  display: inline-block; /* Asegura que la animación se aplique bien al icono */
+}
