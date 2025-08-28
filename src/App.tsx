@@ -232,7 +232,7 @@ export default function App() {
     }
   };
 
-  const text = "🎂 ¡Feliz Cumpleaños Amor! 🎂";
+  const text = "🎂 ¡Feliz Cumpleaños Pompa! 🎂";
 
   const containerVariants = {
     hidden: { opacity: 0 },
